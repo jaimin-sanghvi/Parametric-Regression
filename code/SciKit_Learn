@@ -1,0 +1,122 @@
+import numpy as np
+from sklearn import linear_model
+
+
+
+
+def findSciLinearRegressionMultiple(fileNumber):
+
+    file = np.loadtxt("mvar-set"+str(fileNumber+1)+".dat", dtype=float, comments='#')
+
+    training_arrayX = []
+    training_arrayY = []
+    testing_arrayX = []
+    testing_arrayY = []
+
+    #find rows and  cols
+    rows = file.shape[0]
+    columns = file.shape[1]
+
+    #  offset for training and testing data
+    offset = rows/10
+
+    # X and Y array
+    Xarray = file[:, 0:-1]
+    Yarray = file[:, columns - 1:]
+
+
+    # find training and testing data
+    for index in range(Xarray.shape[0]):
+        if index>=offset:
+            training_arrayX.append(Xarray[index])
+            training_arrayY.append(Yarray[index])
+    for index in range(Xarray.shape[0]):
+        if index<offset:
+            testing_arrayX.append(Xarray[index])
+            testing_arrayY.append(Yarray[index])
+
+
+    # intiallize regression matrix
+    regression_test_error = []
+    regression_train_error = []
+
+    XTarray = np.array(testing_arrayX)
+    YTarray = np.array(testing_arrayY)
+
+    XRarray = np.array(training_arrayX)
+    YRarray = np.array(training_arrayY)
+
+    regression = linear_model.LinearRegression()
+    regression.fit(np.array(XRarray), np.array(YRarray))
+
+    regression_test_error.append(np.mean((regression.predict(XTarray) - YTarray) ** 2))
+    regression_train_error.append(np.mean((regression.predict(XRarray) - YRarray) ** 2))
+
+    print "\n *****mvar-set"+str(fileNumber+1)+".dat*******"
+    print("Linear Regression testing error MSE: %.4f" % np.mean(regression_test_error))
+    print("Linear Regression training error MSE: %.4f" % np.mean(regression_train_error))
+
+    pass
+
+def findSciLinearRegressionSingle(fileNumber):
+
+    file = np.loadtxt("svar-set"+str(fileNumber+1)+".dat", dtype=float, comments='#')
+
+    #find rows and  cols
+    training_arrayX = []
+    training_arrayY = []
+    testing_arrayX = []
+    testing_arrayY = []
+
+    rows = file.shape[0]
+    columns = file.shape[1]
+
+    offset = rows/10
+
+    # X and Y array
+    Xarray = file[:, 0:-1]
+    Yarray = file[:, columns - 1:]
+
+    # make training and testing error
+    for index in range(Xarray.shape[0]):
+        if index>=offset:
+            training_arrayX.append(Xarray[index])
+            training_arrayY.append(Yarray[index])
+    for index in range(Xarray.shape[0]):
+        if index<offset:
+            testing_arrayX.append(Xarray[index])
+            testing_arrayY.append(Yarray[index])
+
+
+    # intiallize regression matrix
+    regression_test_error = []
+    regression_train_error = []
+
+    XTarray = np.array(testing_arrayX)
+    YTarray = np.array(testing_arrayY)
+
+    XRarray = np.array(training_arrayX)
+    YRarray = np.array(training_arrayY)
+
+    regression = linear_model.LinearRegression()
+    regression.fit(np.array(XRarray), np.array(YRarray))
+
+    # find testing and training error
+    regression_test_error.append(np.mean((regression.predict(XTarray) - YTarray) ** 2))
+    regression_train_error.append(np.mean((regression.predict(XRarray) - YRarray) ** 2))
+
+    print "\n *****svar-set"+str(fileNumber+1)+".dat*******"
+
+    print("Linear Regression testing error MSE: %.4f" % np.mean(regression_test_error))
+    print("Linear Regression training error MSE: %.4f" % np.mean(regression_train_error))
+
+    pass
+
+print "\n************ Error for Single Variant using Scikit Learn *************"
+for i in range(4):
+    findSciLinearRegressionSingle(i)
+
+print "\n************ Error for Multiple Variant using Scikit Learn *************"
+for i in range(4):
+    findSciLinearRegressionMultiple(i)
+

@@ -1,0 +1,261 @@
+import urllib2
+
+import numpy as np
+from numpy.linalg import inv
+from sklearn import datasets, linear_model
+
+
+def findLinearRegression(file):
+
+    data = urllib2.urlopen("http://www.cs.iit.edu/~agam/cs584/data/regression/mvar-set"+str(file+1)+".dat")
+
+    # find gradient theta
+    def grad_desc(matrixZ,matrixY):
+
+        zT = matrixZ.T
+        itr= 10
+        learningRate = 0.001
+        n = np.shape(matrixZ)[1]
+
+        g_theta = np.ones((n,1),dtype='float')
+        for i in range(itr):
+            pred_Y = Cal_TestData(matrixZ,g_theta)
+            er = np.matrix(pred_Y).T - matrixY
+            grad = np.dot(zT, er.T) / matrixZ.shape[0]
+            g_theta = g_theta - (learningRate*grad)
+        return g_theta
+
+    # calculate theta
+    def Calculate_Theta(matrix, z):
+        theta = inv(matrix.T * matrix) *(matrix.T * np.matrix(z).T)
+        return theta
+
+    # calculate predicted Y
+    def Cal_TestData(matrix_, theta):
+
+        Temp_X = np.array(matrix_)
+        predictY = np.zeros(len(Temp_X))
+
+        for i in range(len(predictY)):
+                for x in range(Temp_X.shape[1]):
+                    predictY[i] = predictY[i]+ (theta[x].T*Temp_X[i,x])
+        return np.matrix(predictY).T
+
+    def calculate_three():
+        x1 = []
+        y1 = []
+        z1 = []
+
+        index = 0
+        for line in data:
+            li=line.strip()
+            if li.startswith("#"):
+                row = line.rstrip()
+                split_rows = li.split(":")
+                if index==3:
+                    no_rows  = split_rows[1]
+                elif index==4:
+                    no_cols = split_rows[1]
+                index = index+1
+            else:
+                rows = line.rstrip()
+                split_rows = li.split(" ")
+                x1.append(float(split_rows[0]))
+                y1.append(float(split_rows[1]))
+                z1.append(float(split_rows[2]))
+
+        x = np.array(x1)
+        y = np.array(y1)
+        z = np.array(z1)
+
+        rms_testing = []
+        rms_training = []
+
+        for i in range(10):
+            training_arrayX = []
+            training_arrayY = []
+            training_arrayZ = []
+
+            testing_arrayX = []
+            testing_arrayY = []
+            testing_arrayZ = []
+
+            index_offset = len(x)/10
+            for index in range(len(x1)):
+                start = i*(index_offset)
+                end = (i*index_offset)+(index_offset-1)
+                if start <= index <= end:
+                    testing_arrayX.append(x[index])
+                    testing_arrayY.append(y[index])
+                    testing_arrayZ.append(z[index])
+
+                else:
+                    training_arrayX.append(x[index])
+                    training_arrayY.append(y[index])
+                    training_arrayZ.append(z[index])
+
+            array_1 = np.ones((len(x), 1), dtype='float')
+            array_2 = np.ones((len(training_arrayX), 1), dtype='float')
+            array_3 = np.ones((len(testing_arrayX), 1), dtype='float')
+
+            matrixA = np.matrix(np.c_[np.array(array_1), np.array(x), np.array(y)])
+            matrixA_Train = np.matrix(np.c_[np.array(array_2), np.array(training_arrayX), np.array(training_arrayY)])
+            matrixA_Test = np.matrix(np.c_[np.array(array_3), np.array(testing_arrayX), np.array(testing_arrayY)])
+
+            theta = Calculate_Theta(matrixA, z)
+
+            # calculate gradient theta
+            g_theta = grad_desc(matrixA, z)
+
+            calculatedY_test = Cal_TestData(matrixA_Test, theta)
+            calculatedY_train = Cal_TestData(matrixA_Train, theta)
+
+            # find testing error
+            difference_test = np.array(calculatedY_test.T) - np.array(testing_arrayZ)
+            mean_square_testing_error = np.mean((difference_test)**2)
+            rms_testing.append(mean_square_testing_error)
+
+            # find training error
+            difference_train = np.array(calculatedY_train.T) - np.array(training_arrayZ)
+            mean_square_training_error = np.mean((difference_train)**2)
+            rms_training.append(mean_square_training_error)
+
+
+        print "Theta"
+        print theta
+        print "Gradient Theta"
+        print np.array(g_theta)
+
+        print "*****mvar-set"+str(file+1)+".dat*******"
+
+        print " Training Error : " + str(np.min(rms_training))
+        print " Testing Error : " + str(np.mean(rms_testing))
+        pass
+
+    def calculate_six():
+
+        x1 = []
+        x2 = []
+        x3 = []
+        x4 = []
+        x5 = []
+        y = []
+        no_rows = 0
+        no_cols = 0
+
+        index = 0
+        for line in data:
+            li=line.strip()
+            if li.startswith("#"):
+                row = line.rstrip()
+                split_rows = li.split(":")
+                if index==3:
+                    no_rows  = split_rows[1]
+                elif index==4:
+                    no_cols = split_rows[1]
+                index = index+1
+            else:
+                rows = line.rstrip()
+                split_rows = li.split(" ")
+                x1.append(float(split_rows[0]))
+                x2.append(float(split_rows[1]))
+                x3.append(float(split_rows[2]))
+                x4.append(float(split_rows[3]))
+                x5.append(float(split_rows[4]))
+                y.append(float(split_rows[5]))
+
+
+        a = np.array(x1)
+        b = np.array(x2)
+        c = np.array(x3)
+        d = np.array(x4)
+        e = np.array(x5)
+        f = np.array(y)
+
+        rms_testing = []
+        rms_training = []
+        for i in range(10):
+            training_arrayA = []
+            training_arrayB = []
+            training_arrayC = []
+            training_arrayD = []
+            training_arrayE = []
+            training_arrayF = []
+
+            testing_arrayA = []
+            testing_arrayB = []
+            testing_arrayC = []
+            testing_arrayD = []
+            testing_arrayE = []
+            testing_arrayF = []
+
+
+            index_offset = len(a)/10
+            print index_offset
+            for index in range(len(x1)):
+                start = i*(index_offset)
+                end = (i*index_offset)+(index_offset-1)
+                if start <= index <= end:
+                    testing_arrayA.append(a[index])
+                    testing_arrayB.append(b[index])
+                    testing_arrayC.append(c[index])
+                    testing_arrayD.append(d[index])
+                    testing_arrayE.append(e[index])
+                    testing_arrayF.append(f[index])
+
+                else:
+                    training_arrayA.append(a[index])
+                    training_arrayB.append(b[index])
+                    training_arrayC.append(c[index])
+                    training_arrayD.append(d[index])
+                    training_arrayE.append(e[index])
+                    training_arrayF.append(f[index])
+
+            array_1 = np.ones((len(a), 1), dtype='float')
+            array_2 = np.ones((len(training_arrayA), 1), dtype='float')
+            array_3 = np.ones((len(testing_arrayA), 1), dtype='float')
+
+            matrixA = np.matrix(np.c_[np.array(array_1), np.array(a), np.array(b), np.array(c), np.array(d), np.array(e)])
+            matrixA_Train = np.matrix(np.c_[np.array(array_2), np.array(training_arrayA), np.array(training_arrayB), np.array(training_arrayC), np.array(training_arrayD), np.array(training_arrayE)])
+            matrixA_Test = np.matrix(np.c_[np.array(array_3), np.array(testing_arrayA), np.array(testing_arrayB), np.array(testing_arrayC), np.array(testing_arrayD), np.array(testing_arrayE)])
+
+            # calculate theta
+            theta = Calculate_Theta(matrixA, f)
+
+            # calculate gradient theta
+            g_theta = grad_desc(matrixA, f)
+
+            calculatedY_test = Cal_TestData(matrixA_Test, theta)
+            calculatedY_train = Cal_TestData(matrixA_Train, theta)
+
+
+            # find testing error
+            difference_test = np.array(calculatedY_test.T) - np.array(testing_arrayF)
+            mean_square_testing_error = np.mean((difference_test)**2)
+            rms_testing.append(mean_square_testing_error)
+
+            # find training error
+            difference = np.array(calculatedY_train.T) - np.array(training_arrayF)
+            mean_square_training_error = np.mean((difference)**2)
+            rms_training.append(mean_square_training_error)
+
+        print "\n*****mvar-set"+str(file+1)+".dat*******"
+
+        print " Training Error : " + str(np.min(rms_training))
+        print " Testing Error : " + str(np.mean(rms_testing))
+        pass
+
+        pass
+
+
+    if int(file+1) == 1:
+        calculate_three()   # calculate error for mvar-set1
+    elif int(file+1) == 2:
+        calculate_three()   # calculate error for mvar-set2
+    elif int(file+1) == 3:
+        calculate_six()     # calculate error for mvar-set3
+    else:
+        calculate_six()     # calculate error for mvar-set4
+
+for i in range(4):
+    findLinearRegression(i)

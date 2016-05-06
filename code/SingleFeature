@@ -1,0 +1,177 @@
+import urllib2
+
+import matplotlib.pyplot as plot
+import numpy as np
+from sklearn import datasets, linear_model
+
+
+def findLinearRegression(file):
+
+    # load file from url
+    data = urllib2.urlopen("http://www.cs.iit.edu/~agam/cs584/data/regression/svar-set"+str(file+1)+".dat") # fetch file data from url
+
+    x1 = []
+    y1 = []
+
+    try:
+        for line in data:
+            li=line.strip()
+            if not li.startswith("#"):
+                rows = line.rstrip()
+                split_rows = li.split(" ")
+                x1.append(float(split_rows[0]))
+                y1.append(float(split_rows[1]))
+
+    except IOError:
+       print "Error: can\'t find file or read data"
+    else:
+       print "Data fetched successfully\n"
+
+    xv = np.array(x1)
+    yv = np.array(y1)
+
+    # calculate theta for different polynomial
+    def calculatePolynomial(x1, y1, degree):
+
+        degree = int(degree)
+        x1 = np.array(x1)
+        y1 = np.array(y1)
+
+        # make a  matrix for left side
+        expected_x = np.zeros((degree*2)+1)
+        temporary_x = np.zeros(x1.shape[0])
+        for x in range(len(temporary_x)):
+            temporary_x[x] = x1[x]
+        for i in range(len(expected_x)):
+            expected_x[i] = sum(x1**i)
+        #    print expected_x[i]
+
+        # make a matrix for left side
+        matrixA = np.matrix(np.zeros((degree+1,degree+1)))
+        for i in range(matrixA.shape[0]):
+            for j in range(matrixA.shape[1]):
+                matrixA[i,j] = expected_x[i+j]
+
+         # make a  matrix for right  side
+        expected_y = np.zeros(degree+1)
+        expected_y[0] = sum(y1)
+        for i in range(1,len(expected_y)):
+            expected_y[i] = sum(y1*(temporary_x**i))
+
+        matrixB = np.matrix(expected_y)
+        theta = np.dot((matrixA **-1),matrixB.T)
+
+        return  theta
+
+    # find predicted Y value
+    def TestData(x1, offset, degree):
+        x1 = np.array(x1)
+        degree = int(degree)
+        y_predict = np.zeros(len(x1))
+        for i in range(len(y_predict)):
+            for d in range(0,degree+1):
+                y_predict[i] = y_predict[i] + (offset[d]*(x1[i]**d))
+        return y_predict
+
+    degree = raw_input("Enter degree of polynomial for svar-set"+ str(file+1) +": \n")
+
+    rms_testing = []
+    rms_training = []
+    index_offset = len(xv)/10
+    a=0
+    for i in range(10):
+        training_arrayX = []
+        training_arrayY = []
+        testing_arrayX = []
+        testing_arrayY = []
+        for index in range(len(x1)):
+            start = i*(index_offset)
+            end = (i*index_offset)+(index_offset-1)
+            if start <= index <= end:
+                testing_arrayX.append(xv[index])
+                testing_arrayY.append(yv[index])
+            else:
+                training_arrayX.append(xv[index])
+                training_arrayY.append(yv[index])
+        offset = calculatePolynomial(training_arrayX, training_arrayY, degree)
+
+        calculatedY_test = TestData(testing_arrayX, offset, degree)
+        calculatedY_train = TestData(training_arrayX, offset, degree)
+
+    #    find by polfit
+    #    thetaByPolyfit = np.polyfit(training_arrayX, training_arrayY, 1)
+
+        mean_square_testing_error = np.mean((calculatedY_test - testing_arrayY)**2)
+        rms_testing.append(mean_square_testing_error)
+
+        mean_square_training_error = np.mean((calculatedY_train - training_arrayY)**2)
+        rms_training.append(mean_square_training_error)
+
+
+    print "*****mvar-set"+str(file+1)+".dat*******"
+
+    print " Training Error : " + str(np.min(rms_training))
+    print " Testing Error : " + str(np.min(rms_testing))
+
+    print "****************************************"
+
+#    print np.argmin(rms_testing)
+#    print np.argmin(rms_training)
+
+    fx_testing = []
+    fx_trainiing = []
+
+    def getFinal_TestX(i):
+        for index in range(len(x1)):
+            start = i*index_offset
+            end = (i*index_offset)+(index_offset-1)
+            if start <= index <= end:
+                fx_testing.append(xv[index])
+        return  np.array(fx_testing)
+
+    def getFinal_TrainX(i):
+        for index in range(len(x1)):
+            start = i*index_offset
+            end = (i*index_offset)+(index_offset-1)
+            if start <= index <= end:
+                pass
+            else:
+                fx_trainiing.append(xv[index])
+
+        return  np.array(fx_trainiing)
+
+
+    # final X & Y from squared mean error and plot it
+    finalX_testing = getFinal_TestX(np.argmin(rms_testing))
+    finalY_testing = np.array(TestData(finalX_testing, offset, degree))
+    finalX_training =getFinal_TrainX(np.argmin(rms_training))
+    finalY_training = np.array(TestData(finalX_training, offset, degree))
+
+
+    # plot training and testing graph in different window
+    plot.figure()
+    plot.xlabel("X")
+    plot.ylabel("Predicted-Y")
+    plot.title("PredictedY v/s X (For Test Data)")
+    plot.scatter(np.array(finalX_testing), np.array(finalY_testing))
+
+    plot.figure()
+    plot.xlabel("X")
+    plot.ylabel("Predicted-Y")
+    plot.title("PredictedY v/s X (For Train Data)")
+    plot.scatter(np.array(finalX_training), np.array(finalY_training))
+
+    plot.figure()
+    plot.xlabel("X")
+    plot.ylabel("Y")
+    plot.title("Y v/s X (For Given Data)")
+    plot.scatter(np.array(xv), np.array(yv))
+
+    plot.xticks(())
+    plot.yticks(())
+    plot.show()
+
+
+# Run linear regression for single feature : svar-set1 to svar-set4
+for i in range(4):
+    findLinearRegression(i)
